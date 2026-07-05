@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚽ ركلة جزاء العالم - Penalty World Cup</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface-light: #1a1a25;
+            --accent: #00ff88;
+            --accent-glow: rgba(0, 255, 136, 0.3);
+            --text: #ffffff;
+            --text-dim: #a0a0b0;
+            --danger: #ff4444;
+            --danger-glow: rgba(255, 68, 68, 0.3);
+            --gold: #ffd700;
+            --gold-glow: rgba(255, 215, 0, 0.3);
+            --orange: #ff8c00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+            25% { transform: translateY(-30px) translateX(10px); opacity: 0.8; }
+            50% { transform: translateY(-10px) translateX(-20px); opacity: 0.5; }
+            75% { transform: translateY(-40px) translateX(15px); opacity: 0.6; }
+        }
+
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+            letter-spacing: 2px;
+            line-height: 1.3;
+        }
+
+        .gradient-text {
+            background: linear-gradient(
+                90deg,
+                #ff0080,
+                #ff8c00,
+                #ffd700,
+                #00ff88,
+                #00bfff,
+                #8b5cf6,
+                #ff0080
+            );
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s linear infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 0, 128, 0.4));
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 300% 50%; }
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .team-select {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            z-index: 1;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            max-width: 400px;
+        }
+
+        @media (max-width: 480px) {
+            .team-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .team-card {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+            user-select: none;
+        }
+
+        .team-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .team-card.selected {
+            border-color: var(--gold);
+            box-shadow: 0 0 30px var(--gold-glow);
+            background: rgba(255, 215, 0, 0.1);
+            transform: translateY(-4px) scale(1.05);
+        }
+
+        .team-flag {
+            font-size: 2rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .team-name {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .game-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+            z-index: 1;
+        }
+
+        .game-screen.active {
+            display: flex;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .match-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 0.8rem;
+            font-size: clamp(0.9rem, 3vw, 1.2rem);
+            flex-wrap: wrap;
+        }
+
+        .score-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            color: var(--gold);
+            text-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .attempts-bar {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .attempt-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s ease;
+        }
+
+        .attempt-dot.success {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+            animation: dotPop 0.4s ease;
+        }
+
+        .attempt-dot.fail {
+            background: var(--danger);
+            border-color: var(--danger);
+            box-shadow: 0 0 12px var(--danger-glow);
+            animation: dotShake 0.4s ease;
+        }
+
+        @keyframes dotPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes dotShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        .points-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            color: var(--gold);
+            margin-bottom: 0.8rem;
+        }
+
+        .pitch-container {
+            position: relative;
+            width: min(320px, 90vw);
+            height: 240px;
+            background: linear-gradient(180deg, #1a5f1a 0%, #0d3d0d 50%, #1a5f1a 100%);
+            border-radius: 12px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.1);
+        }
+
+        .pitch-container::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 100px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-bottom: none;
+            border-radius: 100px 100px 0 0;
+        }
+
+        .goal-area {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 60px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: none;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .goal-net {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 60px;
+            background:
+                repeating-linear-gradient(0deg, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 2px, transparent 2px, transparent 8px),
+                repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 2px, transparent 2px, transparent 8px);
+        }
+
+        .keeper {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.5rem;
+            transition: left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 2;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        .keeper.dive-left {
+            animation: diveLeft 0.6s ease-out forwards;
+        }
+
+        .keeper.dive-right {
+            animation: diveRight 0.6s ease-out forwards;
+        }
+
+        @keyframes diveLeft {
+            0% { transform: translateX(-50%) rotate(0deg); }
+            50% { transform: translateX(-80px) rotate(-30deg); }
+            100% { transform: translateX(-60px) rotate(-15deg); }
+        }
+
+        @keyframes diveRight {
+            0% { transform: translateX(-50%) rotate(0deg); }
+            50% { transform: translateX(80px) rotate(30deg); }
+            100% { transform: translateX(60px) rotate(15deg); }
+        }
+
+        .ball {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            z-index: 3;
+            transition: none;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        .ball.shooting {
+            animation: ballShoot 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes ballShoot {
+            0% { transform: translateX(-50%) scale(1) rotate(0deg); }
+            40% { transform: translateX(var(--ball-x)) translateY(-60px) scale(0.85) rotate(180deg); }
+            70% { transform: translateX(var(--ball-x)) translateY(var(--ball-y)) scale(0.7) rotate(360deg); }
+            100% { transform: translateX(var(--ball-x)) translateY(var(--ball-y)) scale(0.6) rotate(540deg); }
+        }
+
+        .aim-line {
+            position: absolute;
+            bottom: 45px;
+            left: 50%;
+            width: 2px;
+            height: 70px;
+            background: linear-gradient(to top, var(--accent), transparent);
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(var(--aim-angle));
+            opacity: 0.7;
+            transition: transform 0.08s ease-out;
+            border-radius: 1px;
+        }
+
+        .power-bar-container {
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .power-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), var(--gold), var(--danger));
+            border-radius: 4px;
+            transition: width 0.05s linear;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-btn {
+            padding: 0.9rem 2.5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Cairo', sans-serif;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .shoot-btn {
+            background: linear-gradient(135deg, var(--accent), #00cc6a);
+            color: var(--bg);
+            box-shadow: 0 0 25px var(--accent-glow), 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .shoot-btn:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 0 35px var(--accent-glow), 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        .shoot-btn:active {
+            transform: translateY(0) scale(0.97);
+        }
+
+        .shoot-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .shoot-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .shoot-btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .ad-btn {
+            display: none;
+            padding: 0.7rem 1.8rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            font-family: 'Cairo', sans-serif;
+            color: var(--bg);
+            background: linear-gradient(135deg, var(--orange), var(--gold));
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 0.8rem;
+            animation: pulseGlow 1.5s infinite;
+            box-shadow: 0 0 15px rgba(255, 140, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .ad-btn:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 140, 0, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(255, 140, 0, 0.6); }
+        }
+
+        .result-message {
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            min-height: 2.5rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .result-message.goal {
+            color: var(--accent);
+            text-shadow: 0 0 15px var(--accent-glow);
+            animation: messagePop 0.5s ease;
+        }
+
+        .result-message.save {
+            color: var(--danger);
+            text-shadow: 0 0 15px var(--danger-glow);
+        }
+
+        .result-message.miss {
+            color: var(--orange);
+        }
+
+        @keyframes messagePop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .controls-hint {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 0.3rem;
+        }
+
+        .controls-hint kbd {
+            background: var(--surface-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-family: inherit;
+            font-size: 0.75rem;
+        }
+
+        .ad-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+        }
+
+        .ad-screen.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .ad-box {
+            width: min(320px, 90vw);
+            padding: 2rem;
+            background: var(--surface);
+            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .ad-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .ad-timer {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .ad-text {
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .skip-btn {
+            padding: 0.7rem 2rem;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Cairo', sans-serif;
+            color: var(--bg);
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .skip-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .skip-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .end-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .end-screen.active {
+            display: flex;
+            animation: scaleIn 0.6s ease-out;
+        }
+
+        .final-score {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 7vw, 3.5rem);
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px var(--gold-glow);
+        }
+
+        .final-text {
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+
+        .final-points {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            color: var(--gold);
+            margin-bottom: 2rem;
+        }
+
+        .confetti {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+            overflow: hidden;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            top: -10px;
+            animation: confettiFall 3s ease-out forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .hidden { display: none !important; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @media (max-width: 480px) {
+            .pitch-container { height: 200px; }
+            .keeper { font-size: 2rem; }
+            .ball { font-size: 1.2rem; }
+            .control-btn { padding: 0.8rem 2rem; font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+
+    <div class="team-select" id="teamSelect">
+        <h1 class="game-title gradient-text">⚽ ركلة جزاء العالم</h1>
+        <p class="subtitle">اختر فريقك المفضل</p>
+        <div class="team-grid" id="teamGrid"></div>
+        <button class="control-btn shoot-btn" id="startMatchBtn" onclick="startMatch()" disabled>🏁 ابدأ المباراة</button>
+    </div>
+
+    <div class="game-screen" id="gameScreen">
+        <div class="match-info">
+            <span id="playerTeam">🇧🇷 البرازيل</span>
+            <span class="score-display" id="scoreDisplay">0 / 5</span>
+            <span>🧤 الحارس</span>
+        </div>
+        <div class="attempts-bar" id="attemptsBar"></div>
+        <div class="points-display">⭐ النقاط: <span id="points">0</span></div>
+
+        <div class="pitch-container" id="pitch">
+            <div class="goal-area"></div>
+            <div class="goal-net"></div>
+            <div class="keeper" id="keeper">🧤</div>
+            <div class="ball" id="ball">⚽</div>
+            <div class="aim-line" id="aimLine"></div>
+            <div class="power-bar-container">
+                <div class="power-bar" id="powerBar"></div>
+            </div>
+        </div>
+
+        <div class="result-message" id="resultMessage"></div>
+        <button class="ad-btn" id="adBtn" onclick="watchAd()">📺 شاهد إعلاناً لركلة إضافية</button>
+
+        <div class="controls">
+            <button class="control-btn shoot-btn" id="shootBtn" onclick="shoot()">🔥 سدد!</button>
+        </div>
+        <p class="controls-hint">
+            💡 استخدم <kbd>←</kbd> <kbd>→</kbd> لتحريك الاتجاه | اضغط <kbd>مسافة</kbd> أو <kbd>سدد!</kbd> للتصويب
+        </p>
+    </div>
+
+    <div class="ad-screen" id="adScreen">
+        <div class="ad-box">
+            <div class="ad-icon">📺</div>
+            <div class="ad-timer" id="adTimer">5</div>
+            <p class="ad-text">جاري عرض الإعلان...<br>انتظر لحظات</p>
+            <button class="skip-btn" id="skipBtn" onclick="skipAd()" disabled>⏳ انتظر...</button>
+        </div>
+    </div>
+
+    <div class="end-screen" id="endScreen">
+        <div class="confetti" id="confetti"></div>
+        <h1 class="game-title gradient-text">🏆 انتهت المباراة!</h1>
+        <div class="final-score" id="finalScore">3 / 5</div>
+        <p class="final-text" id="finalText">أداء رائع!</p>
+        <div class="final-points">⭐ إجمالي النقاط: <span id="finalPoints">0</span></div>
+        <div class="controls">
+            <button class="control-btn shoot-btn" onclick="restartGame()">🔄 العب مرة أخرى</button>
+            <button class="control-btn" style="background: transparent; border: 2px solid var(--accent); color: var(--accent);" onclick="shareResult()">📤 مشاركة النتيجة</button>
+        </div>
+    </div>
+
+    <script>
+        const teams = [
+            { flag: '🇧🇷', name: 'البرازيل', color: '#009c3b', difficulty: 1.0 },
+            { flag: '🇦🇷', name: 'الأرجنتين', color: '#75aadb', difficulty: 1.1 },
+            { flag: '🇫🇷', name: 'فرنسا', color: '#0055a4', difficulty: 1.2 },
+            { flag: '🇩🇪', name: 'ألمانيا', color: '#ffce00', difficulty: 1.3 },
+            { flag: '🇪🇸', name: 'إسبانيا', color: '#c60b1e', difficulty: 1.2 },
+            { flag: '🇵🇹', name: 'البرتغال', color: '#006600', difficulty: 1.1 },
+            { flag: '🇮🇹', name: 'إيطاليا', color: '#0066cc', difficulty: 1.3 },
+            { flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', name: 'إنجلترا', color: '#cf081f', difficulty: 1.2 },
+        ];
+
+        let selectedTeam = null;
+        let currentAttempt = 0;
+        let totalAttempts = 5;
+        let goals = 0;
+        let points = 0;
+        let aimAngle = 0;
+        let power = 0;
+        let powerDirection = 1;
+        let canShoot = true;
+        let extraAttempt = false;
+        let powerInterval = null;
+        let keeperPosition = 50;
+
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 60; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.top = Math.random() * 100 + '%';
+            p.style.animationDelay = (Math.random() * 15) + 's';
+            p.style.animationDuration = (10 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(p);
+        }
+
+        const teamGrid = document.getElementById('teamGrid');
+        teams.forEach((team, index) => {
+            const card = document.createElement('div');
+            card.className = 'team-card';
+            card.innerHTML = `<div class="team-flag">${team.flag}</div><div class="team-name">${team.name}</div>`;
+            card.onclick = () => selectTeam(index, card);
+            teamGrid.appendChild(card);
+        });
+
+        function selectTeam(index, card) {
+            document.querySelectorAll('.team-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedTeam = teams[index];
+            document.getElementById('startMatchBtn').disabled = false;
+        }
+
+        function startMatch() {
+            if (!selectedTeam) return;
+            document.getElementById('teamSelect').classList.add('hidden');
+            document.getElementById('gameScreen').classList.add('active');
+            document.getElementById('playerTeam').textContent = `${selectedTeam.flag} ${selectedTeam.name}`;
+            createAttemptsBar();
+            startPowerLoop();
+            document.addEventListener('keydown', handleKeydown);
+        }
+
+        function createAttemptsBar() {
+            const bar = document.getElementById('attemptsBar');
+            bar.innerHTML = '';
+            for (let i = 0; i < totalAttempts; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'attempt-dot';
+                dot.id = `dot-${i}`;
+                bar.appendChild(dot);
+            }
+        }
+
+        function startPowerLoop() {
+            if (powerInterval) clearInterval(powerInterval);
+            powerInterval = setInterval(() => {
+                if (!canShoot) { clearInterval(powerInterval); return; }
+                power += 2.5 * powerDirection;
+                if (power >= 100) { power = 100; powerDirection = -1; }
+                if (power <= 0) { power = 0; powerDirection = 1; }
+                document.getElementById('powerBar').style.width = power + '%';
+            }, 20);
+        }
+
+        function handleKeydown(e) {
+            if (!canShoot) return;
+            if (e.key === 'ArrowLeft') { aimAngle = Math.max(-55, aimAngle - 4); }
+            else if (e.key === 'ArrowRight') { aimAngle = Math.min(55, aimAngle + 4); }
+            else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); shoot(); }
+            document.getElementById('aimLine').style.setProperty('--aim-angle', aimAngle + 'deg');
+        }
+
+        function shoot() {
+            if (!canShoot || !selectedTeam) return;
+            canShoot = false;
+            const ball = document.getElementById('ball');
+            const keeper = document.getElementById('keeper');
+            const resultMsg = document.getElementById('resultMessage');
+            const shootBtn = document.getElementById('shootBtn');
+            shootBtn.disabled = true;
+            resultMsg.textContent = '';
+            resultMsg.className = 'result-message';
+
+            const keeperDive = (Math.random() - 0.5) * 100 * selectedTeam.difficulty;
+            keeperPosition = Math.max(20, Math.min(80, 50 + keeperDive));
+            keeper.style.left = keeperPosition + '%';
+            keeper.classList.remove('dive-left', 'dive-right');
+            if (keeperDive < -20) keeper.classList.add('dive-left');
+            else if (keeperDive > 20) keeper.classList.add('dive-right');
+
+            const maxX = 70;
+            const ballX = Math.sin(aimAngle * Math.PI / 180) * maxX;
+            const ballY = -100 - (power * 0.5);
+            ball.style.setProperty('--ball-x', ballX + 'px');
+            ball.style.setProperty('--ball-y', ballY + 'px');
+            ball.classList.add('shooting');
+
+            setTimeout(() => {
+                const ballFinalPercent = 50 + (ballX / 160 * 50);
+                const distance = Math.abs(keeperPosition - ballFinalPercent);
+                const isInGoal = ballFinalPercent > 25 && ballFinalPercent < 75;
+                const isGoal = isInGoal && (distance > 18 || power < 30 || power > 92);
+                const dot = document.getElementById(`dot-${currentAttempt}`);
+
+                if (isGoal) {
+                    dot.classList.add('success');
+                    goals++;
+                    points += Math.floor(power * 12);
+                    resultMsg.textContent = '⚽ هدف رائع! 🎉';
+                    resultMsg.className = 'result-message goal';
+                } else {
+                    dot.classList.add('fail');
+                    if (distance <= 18) {
+                        resultMsg.textContent = '🧤 تصدى الحارس ببراعة!';
+                        resultMsg.className = 'result-message save';
+                    } else {
+                        resultMsg.textContent = '❌ أخطأت المرمى!';
+                        resultMsg.className = 'result-message miss';
+                    }
+                }
+
+                document.getElementById('scoreDisplay').textContent = `${goals} / ${totalAttempts}`;
+                document.getElementById('points').textContent = points;
+                currentAttempt++;
+
+                if (currentAttempt >= totalAttempts) {
+                    if (!extraAttempt && goals < 3) {
+                        document.getElementById('adBtn').style.display = 'block';
+                    }
+                    setTimeout(() => { if (!extraAttempt) endGame(); }, 2000);
+                } else {
+                    setTimeout(() => resetBall(), 2000);
+                }
+            }, 900);
+        }
+
+        function resetBall() {
+            const ball = document.getElementById('ball');
+            const keeper = document.getElementById('keeper');
+            ball.classList.remove('shooting');
+            ball.style.removeProperty('--ball-x');
+            ball.style.removeProperty('--ball-y');
+            keeper.style.left = '50%';
+            keeper.classList.remove('dive-left', 'dive-right');
+            document.getElementById('resultMessage').textContent = '';
+            document.getElementById('resultMessage').className = 'result-message';
+            document.getElementById('shootBtn').disabled = false;
+            canShoot = true;
+            startPowerLoop();
+        }
+
+        function watchAd() {
+            document.getElementById('adScreen').classList.add('active');
+            let timer = 5;
+            const timerEl = document.getElementById('adTimer');
+            const skipBtn = document.getElementById('skipBtn');
+            timerEl.textContent = timer;
+            skipBtn.disabled = true;
+            skipBtn.textContent = '⏳ انتظر...';
+            const countdown = setInterval(() => {
+                timer--;
+                timerEl.textContent = timer;
+                if (timer <= 0) {
+                    clearInterval(countdown);
+                    skipBtn.disabled = false;
+                    skipBtn.textContent = '✅ استمرار';
+                }
+            }, 1000);
+        }
+
+        function skipAd() {
+            document.getElementById('adScreen').classList.remove('active');
+            extraAttempt = true;
+            document.getElementById('adBtn').style.display = 'none';
+            totalAttempts++;
+            const dot = document.createElement('div');
+            dot.className = 'attempt-dot';
+            dot.id = `dot-${totalAttempts - 1}`;
+            document.getElementById('attemptsBar').appendChild(dot);
+            document.getElementById('scoreDisplay').textContent = `${goals} / ${totalAttempts}`;
+            resetBall();
+        }
+
+        function endGame() {
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('endScreen').classList.add('active');
+            document.getElementById('finalScore').textContent = `${goals} / ${totalAttempts}`;
+            document.getElementById('finalPoints').textContent = points;
+            let text = '';
+            if (goals >= 5) text = 'أسطوري! أنت ملك ركلات الجزاء! 👑';
+            else if (goals >= 4) text = 'أداء رائع! تقريباً مثالي! 🌟';
+            else if (goals >= 3) text = 'جيد جداً! استمر في التدريب! 💪';
+            else if (goals >= 2) text = 'ليس سيئاً! حاول مرة أخرى! 🎯';
+            else text = 'لا بأس، التدريب يجعل الكمال! ⚽';
+            document.getElementById('finalText').textContent = text;
+            if (goals >= 3) launchConfetti();
+        }
+
+        function launchConfetti() {
+            const container = document.getElementById('confetti');
+            const colors = ['#ff0080', '#ffd700', '#00ff88', '#00bfff', '#8b5cf6', '#ff8c00', '#ff4444'];
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti-piece';
+                    piece.style.left = Math.random() * 100 + '%';
+                    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    piece.style.animationDuration = (2 + Math.random() * 2.5) + 's';
+                    piece.style.width = (4 + Math.random() * 10) + 'px';
+                    piece.style.height = (4 + Math.random() * 10) + 'px';
+                    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                    container.appendChild(piece);
+                    setTimeout(() => piece.remove(), 5000);
+                }, i * 25);
+            }
+        }
+
+        function restartGame() {
+            currentAttempt = 0;
+            goals = 0;
+            points = 0;
+            aimAngle = 0;
+            power = 0;
+            canShoot = true;
+            extraAttempt = false;
+            totalAttempts = 5;
+            keeperPosition = 50;
+            if (powerInterval) clearInterval(powerInterval);
+            document.getElementById('endScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('teamSelect').classList.remove('hidden');
+            document.getElementById('adBtn').style.display = 'none';
+            document.getElementById('resultMessage').textContent = '';
+            document.getElementById('resultMessage').className = 'result-message';
+            document.getElementById('scoreDisplay').textContent = '0 / 5';
+            document.getElementById('points').textContent = '0';
+            const ball = document.getElementById('ball');
+            ball.classList.remove('shooting');
+            ball.style.removeProperty('--ball-x');
+            ball.style.removeProperty('--ball-y');
+            const keeper = document.getElementById('keeper');
+            keeper.style.left = '50%';
+            keeper.classList.remove('dive-left', 'dive-right');
+            document.querySelectorAll('.team-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById('startMatchBtn').disabled = true;
+            selectedTeam = null;
+            document.removeEventListener('keydown', handleKeydown);
+        }
+
+        function shareResult() {
+            const text = `⚽ ركلة جزاء العالم!\\n🏆 ${selectedTeam ? selectedTeam.flag + ' ' + selectedTeam.name : 'لاعب'}\\n⭐ النقاط: ${points}\\n🎯 الأهداف: ${goals} / ${totalAttempts}\\n\\n🎮 جرب أنت الآن!`;
+            if (navigator.share) {
+                navigator.share({ title: '⚽ ركلة جزاء العالم', text: text }).catch(() => {});
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('✅ تم نسخ النتيجة! يمكنك لصقها في أي مكان.');
+                });
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ تم نسخ النتيجة! يمكنك لصقها في أي مكان.');
+            }
+        }
+    </script>
+</body>
+</html>
